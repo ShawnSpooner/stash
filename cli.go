@@ -11,7 +11,9 @@ import (
 func main() {
 	var r, err = os.Open(DefaultConfigPath())
 	check(err)
-	stash := buildStashFromBuffer(r)
+
+	stash, err := buildStashFromBuffer(r)
+	check(err)
 
 	app := cli.NewApp()
 	app.Name = "stash"
@@ -47,7 +49,7 @@ func AddEntry(stash *Stash, c *cli.Context) {
 
 //List all entries in the stash
 func ListEntries(stash *Stash, c *cli.Context) {
-	stash.PrettyPrint()
+	fmt.Print(stash.Format())
 }
 
 //Get an entry out of the stash and copy its value to the clipboard
@@ -55,4 +57,11 @@ func GetEntry(stash *Stash, c *cli.Context) {
 	command := stash.Get(c.Args()[0])
 	clipboard.WriteAll(command)
 	fmt.Printf("Copied: %v", command)
+}
+
+func check(e error) {
+	if e != nil {
+		fmt.Print("error occured", e)
+		os.Exit(1)
+	}
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -24,40 +25,43 @@ func (s *Stash) Get(key string) string {
 	return s.values[key]
 }
 
-func (s *Stash) SaveStashToWriter(w io.Writer) {
-	contents := convertConfigToJson(s.values)
-	_, err := w.Write(contents)
-	check(err)
+//Writes the stashes contents encoded as JSON to the writer supplied
+func (s *Stash) SaveStashToWriter(w io.Writer) error {
+	contents, err := convertConfigToJson(s.values)
+	_, err = w.Write(contents)
+	return err
 }
 
-func (s *Stash) PrettyPrint() {
+//Returns a pretty formatted string of the contents of the stash
+//Keys => Values
+func (s *Stash) Format() string {
+	var output string
 	for k, v := range s.values {
-		println(k, "=>", v)
+		output += fmt.Sprintf("%v => %v\n", k, v)
 	}
+	return output
 }
 
-func buildStashFromBuffer(r io.Reader) *Stash {
+//Builds a new stash from the Reader supplied to it by reading from the reader
+//and converting the JSON into a map[string]string. It then initilizes a new stash around
+//the map
+func buildStashFromBuffer(r io.Reader) (*Stash, error) {
 	config, err := ioutil.ReadAll(r)
-	check(err)
-	values := convertFileToMap(config)
-	return &Stash{values: values}
+	if err != nil {
+		return nil, err
+	}
+	values, err := convertFileToMap(config)
+	return &Stash{values: values}, err
 }
 
-func convertFileToMap(file []byte) map[string]string {
+//Convert the supplied byte array(containing valid JSON) into a map
+func convertFileToMap(file []byte) (map[string]string, error) {
 	var config map[string]string
 	err := json.Unmarshal(file, &config)
-	check(err)
-	return config
+	return config, err
 }
 
-func convertConfigToJson(config map[string]string) []byte {
-	jsonConfig, err := json.Marshal(config)
-	check(err)
-	return jsonConfig
-}
-
-func check(e error) {
-	if e != nil {
-		panic(e)
-	}
+//Convert the supplied map to a byte array containing the map marshalled as JSON
+func convertConfigToJson(config map[string]string) ([]byte, error) {
+	return json.Marshal(config)
 }

@@ -15,13 +15,19 @@ func TestDefaultConfigFilePath(t *testing.T) {
 
 func TestConvertFileToJson(t *testing.T) {
 	mockFile := []byte(`{"test":"value"}`)
-	json := convertFileToMap(mockFile)
+	json, _ := convertFileToMap(mockFile)
 	assert.Equal(t, json["test"], "value")
+}
+
+func TestErrorReturnedWithInvalidJson(t *testing.T) {
+	mockFile := []byte(`{"test" ->broken"}`)
+	_, err := convertFileToMap(mockFile)
+	assert.NotNil(t, err)
 }
 
 func TestConvertMapToJsonString(t *testing.T) {
 	mapFile := map[string]string{"test": "value"}
-	jsonValue := convertConfigToJson(mapFile)
+	jsonValue, _ := convertConfigToJson(mapFile)
 	assert.Equal(t, string(jsonValue), `{"test":"value"}`)
 }
 
@@ -32,6 +38,12 @@ func TestAddToStash(t *testing.T) {
 }
 
 func TestBuildStashFromReader(t *testing.T) {
-	stash := buildStashFromBuffer(strings.NewReader(`{"loaded":"data"}`))
+	stash, _ := buildStashFromBuffer(strings.NewReader(`{"loaded":"data"}`))
 	assert.Equal(t, stash.Get("loaded"), "data")
+}
+
+func TestFormatOutput(t *testing.T) {
+	stash := Stash{values: map[string]string{"test": "value"}}
+	output := stash.Format()
+	assert.Equal(t, output, "test => value\n")
 }
